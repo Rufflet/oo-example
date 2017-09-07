@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>optionoffice example</title>
+    <script src="https://d3js.org/d3.v3.min.js"></script>
+</head>
+<body>
+<script>
+        
+var data=[
+    {label:"Экспирация 1", color:"red", coord: { "x": 100,  "y": 400}},
+    {label:"Экспирация 2", color:"green", coord: { "x": 400,  "y": 100}}
+];
+
+var axisData = [ { "x": 500,  "y": 0}, { "x": 0,   "y": 500}];
+var lineFunction = d3.svg.line()
+                          .x(function(d) { return d.x; })
+                          .y(function(d) { return d.y; })
+                          .interpolate("linear");
+
+var svg = d3.select("body").append("svg").attr("width","100%").attr("height", 500);
+
+var lineGraph = svg.append("path")
+                            .attr("d", lineFunction(axisData))
+                            .attr("class", "z-axis")
+                            .attr("stroke", "gray")
+                            .attr("stroke-width", 1)
+                            .attr("fill", "none");
+
+var pathLen = d3.select(".z-axis")[0][0].getTotalLength();
+var day1 = lineGraph.node().getPointAtLength(pathLen/2)
+
+svg.selectAll(".point")
+    .data([[day1.x, day1.y]])
+    .enter().append("circle")
+    .attr("r", 2)
+    .attr("transform", function(d) { return "translate(" + d + ")"; })
+
+svg.append("text")
+    .attr("x", 210)
+    .attr("y", 250)
+    .text("minute")
+    .attr("font-family", "sans-serif")
+    .attr("font-size", "12px")
+    .attr("fill", "gray");
+
+var futureEvent = svg.selectAll(".futureEvent")
+    .data(data)
+    .enter().append("g")
+    .attr("class","futureEvent")
+    .attr("transform", function(d) {
+        return "translate(" + d.coord.x + "," + d.coord.y + ")";
+      });
+
+var line = futureEvent.append("line")
+    .style("stroke", function(d) { return d.color })
+    .attr("stroke-dasharray", "5,5")
+    .attr("x1", 0)
+    .attr("y1", 0)
+    .attr("x2", 0)
+    .attr("y2", -500);
+
+var circle = futureEvent.append("circle")
+    .attr("r", 5);
+
+var rect = futureEvent.append("path")
+    .attr("d", rightRoundedRect(8, -5, 100, 20, 5))
+    .attr("fill", function(d) { return d.color })
+    .style("opacity", 0.5)
+    .style("stroke", "black");
+
+var labelTxt = futureEvent.append("text")
+    .attr("x", 10)
+    .attr("y", 10)
+    .text(function(d) { return d.label })
+    .attr("font-family", "sans-serif")
+    .attr("font-size", "12px")
+    .attr("fill", "black");
+
+transition();
+
+function transition() {
+    futureEvent.transition()
+        .duration(60000) //1min
+        .ease("linear")
+        .attrTween("transform", translateAlong(lineGraph.node()))
+        .each("end", transition);
+}
+
+function translateAlong(path) {
+    var l = path.getTotalLength();
+    return function(d, i, a) {
+        return function(t) {
+            var p0 = path.getPointAtLength(0),
+                p = path.getPointAtLength(t * l);
+            return "translate(" + (d.coord.x + p.x - p0.x) + "," + (d.coord.y + p.y - p0.y) + ")";
+        };
+    };
+}
+
+function rightRoundedRect(x, y, width, height, radius) {
+  return "M" + x + "," + y
+       + "h" + (width - radius)
+       + "a" + radius + "," + radius + " 0 0 1 " + radius + "," + radius
+       + "v" + (height - 2 * radius)
+       + "a" + radius + "," + radius + " 0 0 1 " + -radius + "," + radius
+       + "h" + (radius - width)
+       + "z";
+}
+</script>
+</body>
+</html>
